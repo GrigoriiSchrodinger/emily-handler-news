@@ -2,6 +2,8 @@ import json
 
 from src.conf import API_KEY, redis
 from src.feature.gpt import GptAPI
+from src.logger import logger
+
 
 def change_post(post: str):
     prompt = """
@@ -14,19 +16,20 @@ def change_post(post: str):
     return client.create(prompt=prompt, user_message=post)
 
 def main():
-    message = redis.receive_from_queue(queue_name="processing")
-    if message and "content" in message and isinstance(message["content"], str):
-        new_post = change_post(message["content"])
-        json_news = {
-            "channel": message["channel"],
-            "content": new_post,
-            "id_post": message["id_post"]
-        }
-        print(json_news)
-        redis.send_to_queue(queue_name="ReadyNews", data=json.dumps(json_news))
-
-
+    try:
+        message = redis.receive_from_queue(queue_name="processing")
+        if message and "content" in message and isinstance(message["content"], str):
+            new_post = change_post(message["content"])
+            json_news = {
+                "channel": message["channel"],
+                "content": new_post,
+                "id_post": message["id_post"]
+            }
+            redis.send_to_queue(queue_name="ReadyNews", data=json.dumps(json_news))
+    except Exception as error:
+        logger.error(error)
 
 if __name__ == '__main__':
+    logger.info("Start work")
     while True:
         main()
