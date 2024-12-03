@@ -16,8 +16,13 @@ class LokiHandler(logging.Handler):
             **self.tags,
             "level": record.levelname,
             "module": record.module,
-            "function": record.funcName
+            "function": record.funcName,
+            "time": record.created,
         }
+
+        if record.levelname == "ERROR":
+            tags_with_level["error_count"] = 1
+
         payload = {
             "streams": [
                 {
