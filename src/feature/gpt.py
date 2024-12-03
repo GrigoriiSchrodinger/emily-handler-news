@@ -32,7 +32,7 @@ class GptAPI:
                     }
                 ]
             )
-            logger.debug(f"Ответ GPT - {completion}")
+            logger.info(f"Ответ GPT - {completion}")
             return completion.choices[0].message.content
         except Exception as error:
             logger.error(error)
