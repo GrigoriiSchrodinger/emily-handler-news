@@ -41,3 +41,14 @@ class RedisQueue:
             return None
         except Exception as error:
             logger.error(error)
+
+    def clear_queue(self, queue_name):
+        """
+        Очищает очередь, удаляя все элементы.
+        """
+        try:
+            self.redis_conn.delete(queue_name)
+            logger.debug(f"Очередь {queue_name} очищена.")
+        except Exception as error:
+            logger.error(error)
+
