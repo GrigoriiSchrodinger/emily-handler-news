@@ -18,7 +18,10 @@ class GptAPI:
 
     def create(self, prompt: str, user_message: str) -> str:
         try:
-            logger.debug(f"Запрос GPT - model = {self.model} | prompt = {prompt} | user_message = {user_message}")
+            logger.debug(
+                f"Запрос GPT - model = {self.model} | prompt = {prompt[:50]}... | user_message = {user_message[:100]}...",
+                extra={'tags': {'service': 'gpt', 'action': 'request'}}
+            )
             completion = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -32,7 +35,28 @@ class GptAPI:
                     }
                 ]
             )
-            logger.info(f"Ответ GPT - {completion}")
+            
+            logger.info(
+                "Ответ GPT получен",
+                extra={
+                    'tags': {
+                        'service': 'gpt',
+                        'action': 'response',
+                        'model': completion.model,
+                        'completion_id': completion.id,
+                        'token_usage': completion.usage.total_tokens
+                    }
+                }
+            )
             return completion.choices[0].message.content
+            
         except Exception as error:
-            logger.error(error)
+            logger.exception(
+                f"GPT API Error: {str(error)}",
+                extra={'tags': {
+                    'service': 'gpt',
+                    'error_type': error.__class__.__name__,
+                    'status_code': getattr(error, 'status_code', None)
+                }}
+            )
+            raise

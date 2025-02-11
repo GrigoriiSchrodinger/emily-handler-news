@@ -2,6 +2,7 @@ import json
 
 from src.conf import API_KEY, redis
 from src.feature.gpt import GptAPI
+from src.feature.request.RequestHandler import RequestDataBase
 from src.logger import logger
 
 
@@ -13,7 +14,6 @@ def change_post(post: str, links: list):
         2. Улучши текст новости, используя лучшие практики верстки для улучшения визуальной части текста. Теги для верстки, которые можно использовать указаны ниже, используй только их.
         Правила верстки телеграмма, используй только их и никаких других: 
             <b>bold</b>, <strong>bold</strong>
-            <span class="tg-spoiler">spoiler</span>, <tg-spoiler>spoiler</tg-spoiler>
             <a href="http://www.example.com/">inline URL</a>
             <a href="tg://user?id=123456789">inline mention of a user</a>
             <code>inline fixed-width code</code>
@@ -40,34 +40,34 @@ def change_post(post: str, links: list):
         6. Нельзя использовать смайлики
         - Смайлики могут быть, но только не больше 1 за пост
         7. Ссылки на другие телеграмм каналы
-        - все ссылки можно использовать, кроме тех которые введут на другой телеграм канал, они похоже на https://t.me/
-        
+        - все ссылки можно использовать, кроме тех которые введут на другой телеграм канал, они похоже на 'https://t.me/' или '@whackdoor'
+
         Общие правила:
         1.	Целевая аудитория:
-        Молодежь и взрослые с активной жизненной позицией от 18 до 40, интересующиеся новостями, технологиями и поп-культурой.
+        Молодежь и взрослые с активной жизненной позицией от 18 до 40.
         2.	Стиль изложения:
-        - Разговорный, с элементами иронии и сарказма.
+        - Разговорный.
         - Краткие, цепляющие заголовки и первые фразы.
         - соблюдай краткость
+        - простота, но строгость. 
         3.	Формат:
         - Максимальная длина — 1024 символа.
         - Включение конкретных цифр и фактов для усиления эффекта.
     """
-    print(prompt)
     client = GptAPI(API_KEY)
     return client.create(prompt=prompt, user_message=post)
 
 def main():
     try:
+        request_db = RequestDataBase()
         message = redis.receive_from_queue(queue_name="text_conversion")
         if message and "content" in message and isinstance(message["content"], str):
             new_post = change_post(message["content"], message["outlinks"])
             json_news = {
-                "channel": message["channel"],
-                "content": new_post,
-                "id_post": message["id_post"]
+                "seed": message["seed"]
             }
-            redis.send_to_queue(queue_name="ReadyNews", data=json.dumps(json_news))
+            request_db.create_modified_news(channel=message["channel"], id_post=message["id_post"], text=new_post)
+            redis.send_to_queue(queue_name="ForModer", data=json.dumps(json_news))
     except Exception as error:
         logger.error(error)
 
