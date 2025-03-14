@@ -53,5 +53,6 @@ jobs:
             --env-file /path/to/deployment/.env \
             -v ${{ github.event.repository.name }}_data:/app/data \
             --network app \
+            --workdir /app \
             ${{ github.event.repository.name }}:latest
         EOF
