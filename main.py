@@ -1,9 +1,10 @@
 import json
 
-from src.conf import API_KEY, redis
+from src.conf import API_KEY
 from src.feature.gpt import GptAPI
 from src.feature.request.RequestHandler import RequestDataBase
 from src.logger import logger
+from src.service import redis
 
 
 def change_post(post: str, links: list):
