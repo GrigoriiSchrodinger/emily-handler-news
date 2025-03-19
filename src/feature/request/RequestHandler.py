@@ -6,11 +6,11 @@ from pydantic import BaseModel, ValidationError
 
 from src.feature.request import schemas
 from src.logger import logger
-from src.service_url import get_url_emily_database_handler
+from src.service_url import get_url_emily_database_handler, get_url_emily_gpt_handler
 
 
 class RequestHandler:
-    def __init__(self, base_url=get_url_emily_database_handler(), headers=None, timeout=10):
+    def __init__(self, base_url=get_url_emily_database_handler(), headers=None, timeout=30):
         """
         Инициализация класса для работы с запросами.
 
@@ -238,3 +238,17 @@ class RequestDataBase(RequestHandler):
             text=text
         )
         return self.__create_modified_news__(data=data)
+
+class RequestGptHandler(RequestHandler):
+    def __init__(self, base_url=get_url_emily_gpt_handler(), timeout=120):
+        super().__init__(base_url=base_url, timeout=timeout)
+
+    def __upgrade_news__(self, data: schemas.ImproveText) -> schemas.ImproveTextResponse:
+        return self.__post__(endpoint='text-handler/improve', data=data)
+
+    def upgrade_news(self, text: str, links: list) -> schemas.ImproveTextResponse:
+        data = schemas.ImproveTextResponse(
+            text=text,
+            links=links
+        )
+        return self.__upgrade_news__(data=data)
