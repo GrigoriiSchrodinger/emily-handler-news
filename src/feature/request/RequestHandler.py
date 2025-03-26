@@ -5,6 +5,7 @@ import requests
 from pydantic import BaseModel, ValidationError
 
 from src.feature.request import schemas
+from src.feature.request.schemas import SendNewsRelationship
 from src.logger import logger
 from src.service_url import get_url_emily_database_handler, get_url_emily_gpt_handler
 
@@ -42,7 +43,7 @@ class RequestHandler:
             
             url = f"{self.base_url}/{endpoint}"
             logger.debug(
-                f"GET запрос: {url} | Параметры: {str(query_params.dict())[:100]}...",
+                f"GET запрос: {url} | Параметры: {str(query_params)[:100]}...",
                 extra={'tags': {
                     'service': 'http',
                     'action': 'request',
@@ -231,6 +232,12 @@ class RequestDataBase(RequestHandler):
     def __create_modified_news__(self, data: schemas.ModifiedPost):
         return self.__post__(endpoint='modified-text/create', data=data)
 
+    def __create_relationship__(self, data: schemas.RelationshipNews) -> schemas.RelationshipNewsResponse:
+        return self.__post__(endpoint='all-news/create-relationship', data=data)
+
+    def __get_last_send_news__(self) -> [int, schemas.PostSendNewsList]:
+        return self.__get__(endpoint='send-news/get-news/by/hours', response_model=schemas.PostSendNewsList)
+
     def create_modified_news(self, channel: str, id_post: int, text: str):
         data = schemas.ModifiedPost(
             channel=channel,
@@ -239,6 +246,17 @@ class RequestDataBase(RequestHandler):
         )
         return self.__create_modified_news__(data=data)
 
+    def create_relationship(self, seed_news: str, current_news: str):
+        data = schemas.RelationshipNews(
+            seed_news=seed_news,
+            related_new_seed=current_news
+        )
+        return self.__create_relationship__(data=data)
+
+    def get_last_news_send(self) -> schemas.PostSendNewsList:
+        queue = self.__get_last_send_news__()
+        return queue[1]
+
 class RequestGptHandler(RequestHandler):
     def __init__(self, base_url=get_url_emily_gpt_handler(), timeout=120):
         super().__init__(base_url=base_url, timeout=timeout)
@@ -246,9 +264,21 @@ class RequestGptHandler(RequestHandler):
     def __upgrade_news__(self, data: schemas.ImproveText) -> schemas.ImproveTextResponse:
         return self.__post__(endpoint='text-handler/improve', data=data)
 
+    def __select_relationship__(self, data: schemas.SelectRelationship) -> schemas.SelectRelationshipResponse:
+        req = self.__post__(endpoint='text-handler/select-relationship', data=data)
+        return req
+
     def upgrade_news(self, text: str, links: list) -> schemas.ImproveTextResponse:
         data = schemas.ImproveTextResponse(
             text=text,
             links=links
         )
         return self.__upgrade_news__(data=data)
+
+    def check_relationship(self, news_list: list[SendNewsRelationship], current_news: str) -> dict:
+        print(news_list)
+        data = schemas.SelectRelationship(
+            news_list=news_list,
+            current_news=current_news
+        )
+        return self.__select_relationship__(data=data)
