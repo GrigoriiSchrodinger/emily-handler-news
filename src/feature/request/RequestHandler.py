@@ -276,7 +276,6 @@ class RequestGptHandler(RequestHandler):
         return self.__upgrade_news__(data=data)
 
     def check_relationship(self, news_list: list[SendNewsRelationship], current_news: str) -> dict:
-        print(news_list)
         data = schemas.SelectRelationship(
             news_list=news_list,
             current_news=current_news
