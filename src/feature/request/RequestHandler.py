@@ -269,7 +269,7 @@ class RequestGptHandler(RequestHandler):
         return req
 
     def upgrade_news(self, text: str, links: list) -> schemas.ImproveTextResponse:
-        data = schemas.ImproveTextResponse(
+        data = schemas.ImproveText(
             text=text,
             links=links
         )
